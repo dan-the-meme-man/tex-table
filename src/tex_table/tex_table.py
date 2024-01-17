@@ -1,6 +1,6 @@
 import re
 from warnings import warn
-from numpy import array
+from numpy import array, empty_like
 from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 
@@ -13,9 +13,6 @@ class TexTable:
         except:
             raise ValueError(f"'table' must be array-like. Instead got: {type(table)}.")
         
-        # validate table dimensions once we have a numpy array
-        self.__validate_table()
-            
         # set options to defaults
         self.options = {
             'align': 'c',
@@ -34,9 +31,9 @@ class TexTable:
             'tab_indent': 4,
             'sig_char': '*'
         }
-        if options is not None: # update options if provided
-            for key in options:
-                self.set_option(key, options[key])
+        
+        # validate table dimensions once we have a numpy array
+        self.__validate_table()
         
         # update row index and column index and validate
         self.__set_row_index(table, row_index)
@@ -46,6 +43,13 @@ class TexTable:
         mr = r"^\d*\.?\d+(pt|mm|cm|in|ex|em|mu|sp|\baselineskip|\\columnsep|\\columnwidth|\\evensidemargin|\\linewidth|"
         mr += r"\\oddsidemargin|\\paperheight|\\paperwidth|\\parindent|\\parskip|\\tabcolsep|\\textheight|\\textwidth|\\topmargin)$"
         self.MR = re.compile(mr)
+        
+        self.sig = [['' for _ in range(len(self.table[0]))] for _ in range(len(self.table))]
+        
+        # update options if provided
+        if options is not None:
+            for key in options:
+                self.set_option(key, options[key])
                         
         self.__validate()
 
@@ -272,7 +276,7 @@ class TexTable:
                     s += self.row_index[i] + ' & '
                     
             # add row
-            s += ' & '.join(self.table[i]) + ' \\\\\n'
+            s += ' & '.join([self.__round(self.table[i, j]) + self.sig[i][j] for j in range(len(self.table[i]))]) + ' \\\\\n'
             if self.options['hline'] == 'all':
                 s += ' ' * self.options['tab_indent'] + '\\hline\n'
                 
@@ -338,23 +342,21 @@ class TexTable:
         
         return s
 
-    """Interpret p-values as significant or not."""
+    """Interpret p-values as significant or not. Use reset=True to erase previous interpretation."""
     def interpret_p(self, reset: bool = False, thresholds: tuple|list = (0.05, 0.01, 0.001)):
         for i in range(self.table.shape[0]):
             for j in range(self.table.shape[1]):
                 try:
-                    self.table[i, j] = self.table[i, j].replace(self.options['sig_char'], '')
-                    if not reset:
-                        f = float(self.table[i, j]) # get float rep
-                        sig = ''
+                    self.sig[i][j] = '' # reset significance
+                    if not reset: # if not just resetting interpretation
+                        f = float(self.table[i, j]) # get float representation
                         for t in thresholds:
                             if f < t:
-                                sig += self.options['sig_char']
-                        self.table[i, j] += sig
-                except:
+                                self.sig[i][j] += self.options['sig_char']
+                except: # ignore non-numeric entries
                     pass
     
-    """Convenience method for piping operations together."""       
+    """Convenience method for piping operations together."""
     def pipe(self,
              file: str,
              transpose: bool = False,
