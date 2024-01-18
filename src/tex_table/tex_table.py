@@ -1,16 +1,38 @@
 import re
 from warnings import warn
-from numpy import array, empty_like
+from numpy import array
 from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 
 class TexTable:
+    
+    """
+    Class for creating LaTeX tables from Python data structures.
+    """
+    
     def __init__(
         self,
-        table: ArrayLike,
-        row_index: ArrayLike|None = None,
-        col_index: ArrayLike|None = None,
-        options: dict|None = None):
+        table: ArrayLike, # the cells of the table
+        row_index: ArrayLike|None = None, # the row index
+        col_index: ArrayLike|None = None, # the column index
+        options: dict|None = None): # options for the table
+        
+        """
+        Constructor for a `TexTable` object.
+    
+        Args:
+            `table` (`ArrayLike`): The cells of the table.
+            `row_index` (`ArrayLike`, optional): The row index. Defaults to `None`.
+            `col_index` (`ArrayLike`, optional): The column index. Defaults to `None`.
+            `options` (`dict`, optional): Options for the table. Defaults to `None`.
+            
+        Raises:
+            `ValueError`: If `table` is not array-like.
+            `ValueError`: If `row_index` is not `None` and also not array-like.
+            `ValueError`: If `col_index` is not `None` and also not array-like.
+            `ValueError`: If `table` is not 1 or 2 dimensions or flattenable.
+            By flattenable, we mean that more than 2 dimensions are fine, as long as dimensions >2 are empty.
+        """
         
         # try to move table to a numpy array
         try:
@@ -50,17 +72,29 @@ class TexTable:
         mr += r"\\parindent|\\parskip|\\tabcolsep|\\textheight|\\textwidth|\\topmargin)$"
         self.MR = re.compile(mr)
         
+        # initialize significance matrix
         self.sig = [['' for _ in range(len(self.table[0]))] for _ in range(len(self.table))]
         
         # update options if provided
         if options is not None:
             for key in options:
                 self.set_option(key, options[key])
-                        
+        
+        # validate everything
         self.__validate()
 
-    """Internal method for rounding."""
-    def __round(self, obj):
+    def __round(self, obj: array|str|float|int):
+        
+        """
+        Internal method for rounding an object.
+        
+        Args:
+            `obj` (`object`): The object to round. If `obj` is a `numpy` array, it will be rounded in place.
+            
+        Returns:
+            `object`: The rounded object.
+        """
+        
         if self.options['round'] >= 0: # if we should round
             try: # if np array
                 obj = obj.round(self.options['round'])
@@ -73,8 +107,19 @@ class TexTable:
                     pass
         return obj
     
-    """Internal method for setting the row index of the table."""
     def __set_row_index(self, table: ArrayLike, row_index: ArrayLike|None = None):
+        
+        """
+        Internal method for setting the row index of the table.
+        
+        Args:
+            `table` (`ArrayLike`): The table.
+            `row_index` (`ArrayLike`, optional): The row index. Defaults to `None`.
+            
+        Raises:
+            `ValueError`: If `row_index` is not `None` and also not array-like.
+        """
+        
         # set row index using explicit user input > pandas > automatic if possible
         if row_index is not None:
             try:
@@ -87,8 +132,19 @@ class TexTable:
             r = range(self.options['row_index_start'], self.table.shape[0] + self.options['row_index_start'])
             self.row_index = array(r) # guaranteed by validate_table
     
-    """Internal method for setting the column index of the table."""
     def __set_col_index(self, table: ArrayLike, col_index: ArrayLike|None = None):
+        
+        """
+        Internal method for setting the column index of the table.
+        
+        Args:
+            `table` (`ArrayLike`): The table.
+            `col_index` (`ArrayLike`, optional): The column index. Defaults to `None`.
+            
+        Raises:
+            `ValueError`: If `col_index` is not `None` and also not array-like.
+        """
+        
         # set col index using explicit user input > pandas > automatic if possible
         if col_index is not None:
             try:
@@ -101,8 +157,16 @@ class TexTable:
             r = range(self.options['col_index_start'], self.table.shape[1] + self.options['col_index_start'])
             self.col_index = array(r) # guaranteed by validate_table
     
-    """Internal method for validating table and indices."""
     def __validate_table(self):
+        
+        """
+        Internal method for validating the table.
+        
+        Raises:
+            `ValueError`: If `table` is not 1 or 2 dimensions or flattenable.
+            By flattenable, we mean that more than 2 dimensions are fine, as long as dimensions >2 are empty.
+        """
+        
         # ensure either 1 or 2 dimensions, and use underlying 2d array
         if self.table.ndim == 1:
             self.table = self.table.reshape(1, -1)
@@ -111,8 +175,16 @@ class TexTable:
         else:
             raise ValueError(f"'table' must have either 1 or 2 dimensions. Instead got: {self.table.ndim}.")
     
-    """Internal method for validating shape of indices."""
     def __validate_indices(self):
+        
+        """
+        Internal method for validating the indices.
+        
+        Raises:
+            `ValueError`: If `row_index` is not `None` and also not array-like.
+            `ValueError`: If `col_index` is not `None` and also not array-like.
+        """
+        
         # ensure either 1 or 2 dimensions, and use underlying 2d array
         if self.row_index.ndim > 1 and self.options['row_index']:
             self.row_index = self.row_index.squeeze()
@@ -123,8 +195,38 @@ class TexTable:
             if self.col_index.ndim > 1:
                 raise ValueError(f"'col_index' should be flat(tenable). Instead got: {self.table.ndim} dimensions.")
     
-    """Internal method for validating entire object."""
     def __validate(self):
+        
+        """
+        Internal method for validating entire object.
+        
+        Raises:
+            `ValueError`: If `table` is not array-like.
+            `ValueError`: If `row_index` is not `None` and also not array-like.
+            `ValueError`: If `col_index` is not `None` and also not array-like.
+            `ValueError`: If `table` is not 1 or 2 dimensions or flattenable.
+            By flattenable, we mean that more than 2 dimensions are fine, as long as dimensions >2 are empty.
+            `ValueError`: If `hline` is not one of: `'all'`, `'header'`, `'none'`.
+            `ValueError`: If `vline` is not one of: `'all'`, `'index'`, `'none'`.
+            `ValueError`: If `box` is not one of: `'all'`, `'none'`, or does not contain one or more of:
+            `'t'`, `'b'`, `'l'`, `'r'`.
+            `ValueError`: If `row_index` is not `None` and length does not match number of rows in `table`.
+            `ValueError`: If `col_index` is not `None` and length does not match number of columns in `table`.
+            `ValueError`: If `bold_row_index` is not `True` or `False`.
+            `ValueError`: If `row_index_start` is not an integer.
+            `ValueError`: If `bold_col_index` is not `True` or `False`.
+            `ValueError`: If `col_index_start` is not an integer.
+            `ValueError`: If `round` is not an integer.
+            `ValueError`: If `make_ints` is not `True` or `False`.
+            `ValueError`: If `tab_indent` is not an integer.
+            `ValueError`: If `sig_char` is not a string.
+            `ValueError`: If `measure` is not a valid measurement.
+        
+        Warnings:
+            `UserWarning`: If `align` is not one of: `'c'`, `'l'`, `'r'`, `'p'`, `'m'`, or `'b'`.
+            `UserWarning`: If `measure` is not specified when `align` is `'p'`, `'m'`, or `'b'`.
+            `UserWarning`: If `sig_char` is not a single character.
+        """
         
         # ensure table and indices are valid
         self.__validate_table()
@@ -141,13 +243,13 @@ class TexTable:
         # validate align
         align = self.options['align']
         if align not in ('c', 'l', 'r', 'p', 'm', 'b'): # center, left, right, paragraph, math
-            warn(f"'align' must be one of: 'c', 'l', 'r', 'p', 'm', 'b'. Instead got: {align}.")
+            warn(f"'align' should be one of: 'c', 'l', 'r', 'p', 'm', 'b'. Instead got: {align}.")
         
         # validate measure
         measure = self.options['measure']
         if align == 'p' or align == 'm' or align == 'b': # paragraph or math - need measurement
             if not re.match(self.MR, measure):
-                warn(f"'measure' must be specified when 'align' is 'p', 'm', or 'b'. Valid examples: '1cm', '2in', '3pt'.")
+                warn(f"'measure' should be specified when 'align' is 'p', 'm', or 'b'. Valid examples: '1cm', '2in', '3pt'.")
             
         # validate hline
         hline = self.options['hline']
@@ -217,11 +319,16 @@ class TexTable:
         if len(self.options['sig_char']) != 1:
             warn(f"'sig_char' should be a single character. Instead got: {len(self.options['sig_char'])} characters.")
     
-    """String representation of the table."""
     def __str__(self):
         
-        self.__validate()
+        """
+        String representation of the table.
         
+        Returns:
+            `str`: The string representation of the table.
+        """
+        
+        # start table
         s = '\nTable:\n\n\\begin{tabular}{'
         
         # left border
@@ -300,9 +407,16 @@ class TexTable:
         s = s.replace('_', '\\_')
         
         return s
-    
-    """Transpose the table."""    
+        
     def T(self):
+        
+        """
+        Transpose the table. Also works in place.
+        
+        Returns:
+            `TexTable`: The transposed table.
+        """
+        
         self.table = self.table.T
         self.row_index, self.col_index = self.col_index, self.row_index
         self.options['row_index'], self.options['col_index'] = self.options['col_index'], self.options['row_index']
@@ -310,38 +424,133 @@ class TexTable:
         self.options['row_index_start'], self.options['col_index_start'] = self.options['col_index_start'], self.options['row_index_start']
         self.__validate()
         return self
-    
-    """Same as T()."""
+
     def transpose(self):
+        
+        """
+        Transpose the table. Also works in place.
+        
+        Returns:
+            `TexTable`: The transposed table.
+        """
+        
         return self.T()
     
-    """Set a single option."""
     def set_option(self, option: str, value: str):
+        
+        """
+        Set a single option.
+        
+        Args:
+            `option` (`str`): The option to set.
+            `value` (`str`): The value to set the option to.
+            
+        Raises:
+            `ValueError`: If `table` is not array-like.
+            `ValueError`: If `row_index` is not `None` and also not array-like.
+            `ValueError`: If `col_index` is not `None` and also not array-like.
+            `ValueError`: If `table` is not 1 or 2 dimensions or flattenable.
+            By flattenable, we mean that more than 2 dimensions are fine, as long as dimensions >2 are empty.
+            `ValueError`: If `hline` is not one of: `'all'`, `'header'`, `'none'`.
+            `ValueError`: If `vline` is not one of: `'all'`, `'index'`, `'none'`.
+            `ValueError`: If `box` is not one of: `'all'`, `'none'`, or does not contain one or more of:
+            `'t'`, `'b'`, `'l'`, `'r'`.
+            `ValueError`: If `row_index` is not `None` and length does not match number of rows in `table`.
+            `ValueError`: If `col_index` is not `None` and length does not match number of columns in `table`.
+            `ValueError`: If `bold_row_index` is not `True` or `False`.
+            `ValueError`: If `row_index_start` is not an integer.
+            `ValueError`: If `bold_col_index` is not `True` or `False`.
+            `ValueError`: If `col_index_start` is not an integer.
+            `ValueError`: If `round` is not an integer.
+            `ValueError`: If `make_ints` is not `True` or `False`.
+            `ValueError`: If `tab_indent` is not an integer.
+            `ValueError`: If `sig_char` is not a string.
+            `ValueError`: If `measure` is not a valid measurement.
+        
+        Warnings:
+            `UserWarning`: If `align` is not one of: `'c'`, `'l'`, `'r'`, `'p'`, `'m'`, or `'b'`.
+            `UserWarning`: If `measure` is not specified when `align` is `'p'`, `'m'`, or `'b'`.
+            `UserWarning`: If `sig_char` is not a single character.
+            `UserWarning`: If `option` is not one of the predefined options.
+        """
+        
         if option in self.options:
             self.options[option] = value
             self.__validate()
         else:
             warn(f"Option '{option}' is not valid. Ignoring.")
-    
-    """Set multiple options at once."""
+
     def set_options(self, options: dict):
+        
+        """
+        Set a single option.
+        
+        Args:
+            `options` (`dict`): A dictionary of options to set where the keys are options and the values
+            are the values to set them to.
+            
+        Raises:
+            `ValueError`: If `table` is not array-like.
+            `ValueError`: If `row_index` is not `None` and also not array-like.
+            `ValueError`: If `col_index` is not `None` and also not array-like.
+            `ValueError`: If `table` is not 1 or 2 dimensions or flattenable.
+            By flattenable, we mean that more than 2 dimensions are fine, as long as dimensions >2 are empty.
+            `ValueError`: If `hline` is not one of: `'all'`, `'header'`, `'none'`.
+            `ValueError`: If `vline` is not one of: `'all'`, `'index'`, `'none'`.
+            `ValueError`: If `box` is not one of: `'all'`, `'none'`, or does not contain one or more of:
+            `'t'`, `'b'`, `'l'`, `'r'`.
+            `ValueError`: If `row_index` is not `None` and length does not match number of rows in `table`.
+            `ValueError`: If `col_index` is not `None` and length does not match number of columns in `table`.
+            `ValueError`: If `bold_row_index` is not `True` or `False`.
+            `ValueError`: If `row_index_start` is not an integer.
+            `ValueError`: If `bold_col_index` is not `True` or `False`.
+            `ValueError`: If `col_index_start` is not an integer.
+            `ValueError`: If `round` is not an integer.
+            `ValueError`: If `make_ints` is not `True` or `False`.
+            `ValueError`: If `tab_indent` is not an integer.
+            `ValueError`: If `sig_char` is not a string.
+            `ValueError`: If `measure` is not a valid measurement.
+        
+        Warnings:
+            `UserWarning`: If `align` is not one of: `'c'`, `'l'`, `'r'`, `'p'`, `'m'`, or `'b'`.
+            `UserWarning`: If `measure` is not specified when `align` is `'p'`, `'m'`, or `'b'`.
+            `UserWarning`: If `sig_char` is not a single character.
+            `UserWarning`: If any key in `options` is not one of the predefined options.
+        """
+        
         for key in options:
             if key in self.options:
                 self.options[key] = options[key]
             else:
                 warn(f"Option '{key}' is not valid. Ignoring.")
         self.__validate()
-    
-    """Write table to file."""
+      
     def write(self, file: str):
         
-        self.__validate()
+        """
+        Write table to file.
         
+        Args:
+            `file` (`str`): The file to write to.
+            
+        Raises:
+            `ValueError`: If `file` is `None`.
+        """
+        
+        if file is None:
+            raise ValueError("'file' must be specified to write to file.")
         with open(file, 'w+') as f:
             f.write(str(self))
-    
-    """Display currently set options."""
+
     def print_options(self):
+        
+        """
+        Display currently set options.
+        
+        Returns:
+            `str`: The string representation of the options.
+        """
+        
         s = '\nOptions:\n\n'
         
         for key in self.options:
@@ -351,8 +560,18 @@ class TexTable:
         
         return s
 
-    """Interpret p-values as significant or not. Use reset=True to erase previous interpretation."""
     def interpret_p(self, reset: bool = False, thresholds: tuple|list = (0.05, 0.01, 0.001)):
+        
+        """
+        Interpret p-values as significant or not. Use reset=True to erase previous interpretation.
+        
+        Args:
+            `reset` (`bool`, optional): Whether to remove current interpretation without replacing it.
+            Defaults to `False`.
+            `thresholds` (`tuple` or `list`, optional): The thresholds to use for significance.
+            Defaults to `(0.05, 0.01, 0.001)`.        
+        """
+        
         for i in range(self.table.shape[0]):
             for j in range(self.table.shape[1]):
                 try:
@@ -365,7 +584,6 @@ class TexTable:
                 except: # ignore non-numeric entries
                     pass
     
-    """Convenience method for piping operations together."""
     def pipe(self,
              transpose: bool = False,
              options: dict|None = None,
@@ -376,6 +594,55 @@ class TexTable:
              file: str = 'table.txt',
              write: bool = True
              ):
+        
+        """
+        Convenience method for piping operations together.
+        
+        Args:
+            transpose (`bool`, optional): Whether to transpose the table. Defaults to `False`.
+            options (`dict`, optional): Options to set. Defaults to `None`.
+            interpret_p (`bool`, optional): Whether to interpret p-values as significant or not.
+            Defaults to `False`.
+            reset (`bool`, optional): Whether to remove current interpretation without replacing it.
+            Defaults to `False`.
+            thresholds (`tuple` or `list`, optional): The thresholds to use for significance.
+            Defaults to `(0.05, 0.01, 0.001)`.
+            print (`bool`, optional): Whether to print the table. Defaults to `True`.
+            file (`str`, optional): The file to write to. Defaults to `'table.txt'`.
+            write (`bool`, optional): Whether to write the table to file. Defaults to `True`.
+            
+        Raises:
+            `ValueError`: If `table` is not array-like.
+            `ValueError`: If `row_index` is not `None` and also not array-like.
+            `ValueError`: If `col_index` is not `None` and also not array-like.
+            `ValueError`: If `table` is not 1 or 2 dimensions or flattenable.
+            By flattenable, we mean that more than 2 dimensions are fine, as long as dimensions >2 are empty.
+            `ValueError`: If `hline` is not one of: `'all'`, `'header'`, `'none'`.
+            `ValueError`: If `vline` is not one of: `'all'`, `'index'`, `'none'`.
+            `ValueError`: If `box` is not one of: `'all'`, `'none'`, or does not contain one or more of:
+            `'t'`, `'b'`, `'l'`, `'r'`.
+            `ValueError`: If `row_index` is not `None` and length does not match number of rows in `table`.
+            `ValueError`: If `col_index` is not `None` and length does not match number of columns in `table`.
+            `ValueError`: If `bold_row_index` is not `True` or `False`.
+            `ValueError`: If `row_index_start` is not an integer.
+            `ValueError`: If `bold_col_index` is not `True` or `False`.
+            `ValueError`: If `col_index_start` is not an integer.
+            `ValueError`: If `round` is not an integer.
+            `ValueError`: If `make_ints` is not `True` or `False`.
+            `ValueError`: If `tab_indent` is not an integer.
+            `ValueError`: If `sig_char` is not a string.
+            `ValueError`: If `measure` is not a valid measurement.
+            
+        Warnings:
+            `UserWarning`: If `align` is not one of: `'c'`, `'l'`, `'r'`, `'p'`, `'m'`, or `'b'`.
+            `UserWarning`: If `measure` is not specified when `align` is `'p'`, `'m'`, or `'b'`.
+            `UserWarning`: If `sig_char` is not a single character.
+            `UserWarning`: If any key in `options` is not one of the predefined options.
+            
+        Returns:
+            `TexTable`: The table.
+        """
+        
         if transpose:
             self.T()
         if options is not None:
@@ -385,7 +652,5 @@ class TexTable:
         if print:
             print(self)
         if write:
-            if file is None:
-                raise ValueError("'file' must be specified to write to file.")
             self.write(file)
         return self
