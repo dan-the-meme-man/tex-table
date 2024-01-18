@@ -5,7 +5,12 @@ from numpy.typing import ArrayLike
 from pandas import DataFrame, Series
 
 class TexTable:
-    def __init__(self, table: ArrayLike, row_index: ArrayLike|None = None, col_index: ArrayLike|None = None, options: dict|None = None):
+    def __init__(
+        self,
+        table: ArrayLike,
+        row_index: ArrayLike|None = None,
+        col_index: ArrayLike|None = None,
+        options: dict|None = None):
         
         # try to move table to a numpy array
         try:
@@ -40,8 +45,9 @@ class TexTable:
         self.__set_col_index(table, col_index)
         
         # regex for validating measurements
-        mr = r"^\d*\.?\d+(pt|mm|cm|in|ex|em|mu|sp|\baselineskip|\\columnsep|\\columnwidth|\\evensidemargin|\\linewidth|"
-        mr += r"\\oddsidemargin|\\paperheight|\\paperwidth|\\parindent|\\parskip|\\tabcolsep|\\textheight|\\textwidth|\\topmargin)$"
+        mr = r"^\d*\.?\d+(pt|mm|cm|in|ex|em|mu|sp|\baselineskip|\\columnsep|\\columnwidth|"
+        mr += r"\\evensidemargin|\\linewidth|\\oddsidemargin|\\paperheight|\\paperwidth|"
+        mr += r"\\parindent|\\parskip|\\tabcolsep|\\textheight|\\textwidth|\\topmargin)$"
         self.MR = re.compile(mr)
         
         self.sig = [['' for _ in range(len(self.table[0]))] for _ in range(len(self.table))]
@@ -211,6 +217,7 @@ class TexTable:
         if len(self.options['sig_char']) != 1:
             warn(f"'sig_char' should be a single character. Instead got: {len(self.options['sig_char'])} characters.")
     
+    """String representation of the table."""
     def __str__(self):
         
         self.__validate()
@@ -293,12 +300,14 @@ class TexTable:
         s = s.replace('_', '\\_')
         
         return s
-                
+    
+    """Transpose the table."""    
     def T(self):
         self.table = self.table.T
         self.row_index, self.col_index = self.col_index, self.row_index
         self.options['row_index'], self.options['col_index'] = self.options['col_index'], self.options['row_index']
         self.options['bold_row_index'], self.options['bold_col_index'] = self.options['bold_col_index'], self.options['bold_row_index']
+        self.options['row_index_start'], self.options['col_index_start'] = self.options['col_index_start'], self.options['row_index_start']
         self.__validate()
         return self
     
@@ -351,25 +360,32 @@ class TexTable:
                     if not reset: # if not just resetting interpretation
                         f = float(self.table[i, j]) # get float representation
                         for t in thresholds:
-                            if f < t:
+                            if f <= t:
                                 self.sig[i][j] += self.options['sig_char']
                 except: # ignore non-numeric entries
                     pass
     
     """Convenience method for piping operations together."""
     def pipe(self,
-             file: str,
              transpose: bool = False,
              options: dict|None = None,
              interpret_p: bool = False,
              reset: bool = False,
-             thresholds: tuple|list = (0.05, 0.01, 0.001)):
+             thresholds: tuple|list = (0.05, 0.01, 0.001),
+             print: bool = True,
+             file: str = 'table.txt',
+             write: bool = True
+             ):
         if transpose:
             self.T()
         if options is not None:
             self.set_options(options)
         if interpret_p:
             self.interpret_p(reset, thresholds)
-        print(self)
-        self.write(file)
+        if print:
+            print(self)
+        if write:
+            if file is None:
+                raise ValueError("'file' must be specified to write to file.")
+            self.write(file)
         return self

@@ -135,6 +135,24 @@ The following options are available:
 - `'tab_indent'`: The number of spaces to indent the table. Default: `4`.
 - `'sig_char'`: The character to use for significant $p$-values. Default: `'*'`.
 
+### Significance Stars
+
+You may add significance stars (or another string of your choosing indicating significance) to your table as follows:
+
+```python
+tt.interpret_p(thresholds = (0.05, 0.01, 0.001)) # these are the defaults
+```
+
+When displaying the table, one star will be added for each threshold that the cell's value is less than or equal to. For the above example, if the $p$-value is less than or equal to 0.05, one star will be added. If the $p$-value is less than or equal to 0.01, two stars will be added. If the $p$-value is less than or equal to 0.001, three stars will be added. If the $p$-value is greater than 0.05, no stars will be added. You may change the character used for the stars by setting the `'sig_char'` option.
+
+If you no longer wish to display the significance stars, you may remove them as follows:
+
+```python
+tt.interpret_p(reset = True)
+```
+
+Additionally, there is no need to reset before modifying the thresholds. You may simply call `interpret_p()` again with the new thresholds.
+
 ### Writing a Table to a File
 
 To write a table to a file, use the `write()` method of your `TexTable` object. For example:
@@ -144,3 +162,24 @@ tt.write('table.txt')
 ```
 
 Note that writing a table can be done at any time, including after transposing the table or modifying the options. This allows you to experiment with the table's formatting as much as you need to ensure your output table is exactly as you want it.
+
+### Pipelining Operations Together
+
+You may run through all the above operations with a single method call. As a simple example:
+
+```python
+tt.pipe(
+    transpose = True, # transpose the table - defaults to False
+    options = {'align': 'c'}, # set the cell alignment to centered - by default, no options are modified
+    interpret_p = True, # add significance stars - defaults to False
+    reset = False, # reset the significance stars - defaults to False
+    thresholds = (0.05, 0.01, 0.001), # set the significance thresholds - defaults to (0.05, 0.01, 0.001)
+    print = True, # print the table to the terminal - defaults to True
+    file = 'table.txt', # write the table to the file 'table.txt' - defaults to 'table.txt'
+    write = True # write the table to the file - defaults to True
+)
+```
+
+This method call will transpose the table, set the cell alignment to centered, add significance stars based on the thresholds given, print the table to the terminal, and write the table to the file `'table.txt'`. A file must be specified if `write=True`.
+
+By default (i.e. `tt.pipe()`), this method will simply print the table and write it to `'table.txt'`.
