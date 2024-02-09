@@ -83,7 +83,7 @@ class TexTable:
         # validate everything
         self.__validate()
 
-    def __round(self, obj: array|str|float|int):
+    def __round(self, obj: ArrayLike|str|float|int):
         
         """
         Internal method for rounding an object.
