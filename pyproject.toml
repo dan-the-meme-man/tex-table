@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core>=3.4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "tex_table"

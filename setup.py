@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from os.path import join
 
 # Package metadata
 NAME = 'tex_table'
@@ -7,8 +8,8 @@ DESCRIPTION = 'TexTable is a simple Python class that converts array-like object
 URL = 'https://github.com/dan-the-meme-man/tex-table'
 AUTHOR = 'Dan DeGenaro'
 AUTHOR_EMAIL = 'drd92@georgetown.edu'
-#LICENSE = 'MIT'
-#KEYWORDS = ['tex', 'latex', 'table', 'tables']
+LICENSE = 'MIT'
+KEYWORDS = ['tex', 'latex', 'table', 'tables']
 
 # Read the contents of your README file
 with open('README.md', 'r') as f:
@@ -30,9 +31,9 @@ setup(
     url=URL,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
-    #license=LICENSE,
-    #keywords=KEYWORDS,
-    packages=find_packages(),
+    license=LICENSE,
+    keywords=KEYWORDS,
+    packages=find_packages(join('src', 'tex_table')),
     install_requires=INSTALL_REQUIRES,
     classifiers=[
         'Development Status :: 5 - Production/Stable',
