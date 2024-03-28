@@ -45,4 +45,5 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Operating System :: OS Independent',
     ],
+    metadata_version='2.2'
 )
