@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+tests/test.py
+tex_table.egg-info/PKG-INFO
+tex_table.egg-info/SOURCES.txt
+tex_table.egg-info/dependency_links.txt
+tex_table.egg-info/requires.txt
+tex_table.egg-info/top_level.txt

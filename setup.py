@@ -7,8 +7,8 @@ DESCRIPTION = 'TexTable is a simple Python class that converts array-like object
 URL = 'https://github.com/dan-the-meme-man/tex-table'
 AUTHOR = 'Dan DeGenaro'
 AUTHOR_EMAIL = 'drd92@georgetown.edu'
-LICENSE = 'MIT'
-KEYWORDS = ['tex', 'latex', 'table', 'tables']
+#LICENSE = 'MIT'
+#KEYWORDS = ['tex', 'latex', 'table', 'tables']
 
 # Read the contents of your README file
 with open('README.md', 'r') as f:
@@ -30,8 +30,8 @@ setup(
     url=URL,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
-    license=LICENSE,
-    keywords=KEYWORDS,
+    #license=LICENSE,
+    #keywords=KEYWORDS,
     packages=find_packages(),
     install_requires=INSTALL_REQUIRES,
     classifiers=[
@@ -44,6 +44,5 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Operating System :: OS Independent',
-    ],
-    metadata_version='2.2'
+    ]
 )
