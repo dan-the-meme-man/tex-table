@@ -8,7 +8,7 @@ version = "0.0.1"
 authors = [
   { name="Dan DeGenaro", email="drd92@georgetown.edu" },
 ]
-description = "A small example package"
+description = "A package to convert a pandas DataFrame to a LaTeX table."
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
