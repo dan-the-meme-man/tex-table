@@ -3,7 +3,7 @@ from os.path import join
 
 # Package metadata
 NAME = 'tex_table'
-VERSION = '1.0'
+VERSION = '1.1'
 DESCRIPTION = 'TexTable is a simple Python class that converts array-like objects such as Pandas DataFrames and Series, NumPy arrays, PyTorch tensors, and Python lists to $\LaTeX$ table representations.'
 URL = 'https://github.com/dan-the-meme-man/tex-table'
 AUTHOR = 'Dan DeGenaro'
